@@ -11,12 +11,12 @@ const Map = ({ vendors, center }) => {
   const [selectedVendor, setSelectedVendor] = useState(null);
   const [map, setMap] = useState(null);
 
-  // Definir íconos dentro del componente, después de que LoadScript haya cargado la API
+  // Definir íconos dentro del componente
   const espanolIcon = useMemo(() => ({
     path: window.google?.maps?.SymbolPath?.CIRCLE || "M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0",
     fillColor: "#ff0000", // Rojo para Española
     fillOpacity: 1,
-    scale: 1, // Tamaño reducido
+    scale: 2,
     strokeColor: "#ffffff",
     strokeWeight: 2,
   }), []);
@@ -25,7 +25,16 @@ const Map = ({ vendors, center }) => {
     path: window.google?.maps?.SymbolPath?.CIRCLE || "M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0",
     fillColor: "#0288d1", // Azul para Francesa
     fillOpacity: 1,
-    scale: 1, // Tamaño reducido
+    scale: 2,
+    strokeColor: "#ffffff",
+    strokeWeight: 2,
+  }), []);
+
+  const mixedIcon = useMemo(() => ({
+    path: window.google?.maps?.SymbolPath?.CIRCLE || "M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0",
+    fillColor: "#800080", // Morado para ambos tipos
+    fillOpacity: 1,
+    scale: 2,
     strokeColor: "#ffffff",
     strokeWeight: 2,
   }), []);
@@ -61,39 +70,47 @@ const Map = ({ vendors, center }) => {
         options={mapOptions}
         onLoad={(mapInstance) => setMap(mapInstance)}
       >
-        {vendors.map((vendor) => (
-          <div key={vendor.id}>
-            <Marker
-              position={vendor.position}
-              onClick={() => {
-                console.log("Clic en marcador:", vendor); // Depuración
-                setSelectedVendor(vendor);
-              }}
-              icon={vendor.cylinderType === "Española" ? espanolIcon : francesaIcon}
-              zIndex={1000}
-            />
-            <OverlayView
-              position={vendor.position}
-              mapPaneName={OverlayView.FLOAT_PANE}
-              getPixelPositionOffset={getPixelPositionOffset}
-            >
-              <div
-                style={{
-                  background: "rgba(0, 0, 0, 0.7)",
-                  color: "#0288d1",
-                  padding: "4px 8px",
-                  borderRadius: "4px",
-                  fontSize: "14px",
-                  fontWeight: "bold",
-                  whiteSpace: "nowrap",
-                  pointerEvents: "none",
+        {vendors.map((vendor) => {
+          const icon =
+            vendor.cylinders.espanol > 0 && vendor.cylinders.francesa > 0
+              ? mixedIcon
+              : vendor.cylinders.espanol > 0
+              ? espanolIcon
+              : francesaIcon;
+          return (
+            <div key={vendor.id}>
+              <Marker
+                position={vendor.position}
+                onClick={() => {
+                  console.log("Clic en marcador:", vendor); // Depuración
+                  setSelectedVendor(vendor);
                 }}
+                icon={icon}
+                zIndex={1000}
+              />
+              <OverlayView
+                position={vendor.position}
+                mapPaneName={OverlayView.FLOAT_PANE}
+                getPixelPositionOffset={getPixelPositionOffset}
               >
-                Punto de venta: {vendor.name}
-              </div>
-            </OverlayView>
-          </div>
-        ))}
+                <div
+                  style={{
+                    background: "rgba(0, 0, 0, 0.7)",
+                    color: "#0288d1",
+                    padding: "4px 8px",
+                    borderRadius: "4px",
+                    fontSize: "14px",
+                    fontWeight: "bold",
+                    whiteSpace: "nowrap",
+                    pointerEvents: "none",
+                  }}
+                >
+                  Punto de venta: {vendor.name}
+                </div>
+              </OverlayView>
+            </div>
+          );
+        })}
         {selectedVendor && (
           <InfoWindow
             position={selectedVendor.position}
@@ -108,10 +125,10 @@ const Map = ({ vendors, center }) => {
                   Dirección: {selectedVendor.address}
                 </Typography>
                 <Typography variant="body2">
-                  Tipo de bombona: {selectedVendor.cylinderType}
+                  Cantidad Española: {selectedVendor.cylinders.espanol}
                 </Typography>
                 <Typography variant="body2">
-                  Cantidad disponible: {selectedVendor.quantity}
+                  Cantidad Francesa: {selectedVendor.cylinders.francesa}
                 </Typography>
                 <Typography variant="body2">
                   Lat: {selectedVendor.position.lat.toFixed(4)}

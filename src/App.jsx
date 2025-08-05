@@ -63,8 +63,7 @@ const App = () => {
       userId: "vendedor1",
       name: "Gas Malabo Centro",
       address: "Avenida de la Independencia, Malabo",
-      cylinderType: "Española",
-      quantity: 10,
+      cylinders: { espanol: 5, francesa: 8 },
       position: { lat: 3.755, lng: 8.775 },
     },
     {
@@ -74,8 +73,7 @@ const App = () => {
       userId: "vendedor2",
       name: "Gas Ela Nguema",
       address: "Calle Ela Nguema, Malabo",
-      cylinderType: "Francesa",
-      quantity: 5,
+      cylinders: { espanol: 0, francesa: 5 },
       position: { lat: 3.749, lng: 8.780 },
     },
     {
@@ -85,8 +83,7 @@ const App = () => {
       userId: "vendedor3",
       name: "Gas Los Ángeles",
       address: "Barrio Los Ángeles, Malabo",
-      cylinderType: "Española",
-      quantity: 8,
+      cylinders: { espanol: 8, francesa: 0 },
       position: { lat: 3.760, lng: 8.770 },
     },
   ];
@@ -201,22 +198,6 @@ const App = () => {
     setIsDashboardOpen(false);
   };
 
-  // Filtrar vendedores según distancia y tipo de bombona
-  const filteredVendors = userLocation && (distanceFilter || cylinderTypeFilter)
-    ? vendors.filter((vendor) => {
-        let passesDistanceFilter = true;
-        let passesCylinderTypeFilter = true;
-        if (distanceFilter) {
-          const distance = calculateDistance(userLocation, vendor.position);
-          passesDistanceFilter = distance <= distanceFilter;
-        }
-        if (cylinderTypeFilter) {
-          passesCylinderTypeFilter = vendor.cylinderType === cylinderTypeFilter;
-        }
-        return passesDistanceFilter && passesCylinderTypeFilter;
-      })
-    : vendors;
-
   // Fórmula de Haversine para calcular distancia en km
   const calculateDistance = (pos1, pos2) => {
     const toRad = (value) => (value * Math.PI) / 180;
@@ -229,6 +210,25 @@ const App = () => {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   };
+  
+  // Filtrar vendedores según distancia y tipo de bombona
+  const filteredVendors = userLocation && (distanceFilter || cylinderTypeFilter)
+    ? vendors.filter((vendor) => {
+        let passesDistanceFilter = true;
+        let passesCylinderTypeFilter = true;
+        if (distanceFilter) {
+          const distance = calculateDistance(userLocation, vendor.position);
+          passesDistanceFilter = distance <= distanceFilter;
+        }
+        if (cylinderTypeFilter) {
+          passesCylinderTypeFilter =
+            cylinderTypeFilter === "Española"
+              ? vendor.cylinders.espanol > 0
+              : vendor.cylinders.francesa > 0;
+        }
+        return passesDistanceFilter && passesCylinderTypeFilter;
+      })
+    : vendors;
 
   return (
     <ThemeProvider theme={theme}>

@@ -1,157 +1,146 @@
-import { useState } from "react";
-import { TextField, Button, Paper, FormControl, InputLabel, Select, MenuItem } from "@mui/material";
+import { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
+} from "@mui/material";
 
 const VendorForm = ({ onAddVendor }) => {
-  const [vendorData, setVendorData] = useState({
+  const [formData, setFormData] = useState({
+    id: Date.now(),
     username: "",
     password: "",
     name: "",
     address: "",
-    cylinderType: "",
-    quantity: "",
+    cylinders: { espanol: 0, francesa: 0 },
+    position: { lat: 3.7523, lng: 8.7742 },
   });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setVendorData({ ...vendorData, [name]: value });
+    if (name === "espanol" || name === "francesa") {
+      setFormData({
+        ...formData,
+        cylinders: { ...formData.cylinders, [name]: Number(value) || 0 },
+      });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = () => {
     if (
-      !vendorData.username.trim() ||
-      !vendorData.password.trim() ||
-      !vendorData.name.trim() ||
-      !vendorData.address.trim() ||
-      !vendorData.cylinderType ||
-      !vendorData.quantity
+      !formData.username ||
+      !formData.password ||
+      !formData.name ||
+      !formData.address ||
+      (formData.cylinders.espanol === 0 && formData.cylinders.francesa === 0)
     ) {
-      alert("Por favor, completa todos los campos.");
+      alert("Por favor, completa todos los campos. Debe haber al menos una bombona.");
       return;
     }
+    onAddVendor(formData);
+    setFormData({
+      id: Date.now(),
+      username: "",
+      password: "",
+      name: "",
+      address: "",
+      cylinders: { espanol: 0, francesa: 0 },
+      position: { lat: 3.7523, lng: 8.7742 },
+    });
+  };
 
+  // Obtener ubicación del usuario para el formulario
+  useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const newVendor = {
-            id: Date.now(),
-            username: vendorData.username,
-            password: vendorData.password,
-            name: vendorData.name,
-            address: vendorData.address,
-            cylinderType: vendorData.cylinderType,
-            quantity: Number(vendorData.quantity),
+          setFormData((prev) => ({
+            ...prev,
             position: {
               lat: position.coords.latitude,
               lng: position.coords.longitude,
             },
-          };
-          onAddVendor(newVendor);
-          setVendorData({
-            username: "",
-            password: "",
-            name: "",
-            address: "",
-            cylinderType: "",
-            quantity: "",
-          });
+          }));
         },
         (error) => {
-          console.error("Error obteniendo geolocalización:", error);
-          alert("No se pudo obtener la ubicación. Intenta de nuevo.");
+          console.error("Error obteniendo ubicación del usuario:", error);
         }
       );
-    } else {
-      alert("Geolocalización no soportada por el navegador.");
     }
-  };
+  }, []);
 
   return (
-    <Paper
-      elevation={3}
-      sx={{
-        position: "absolute",
-        top: "50%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
-        padding: "24px",
-        maxWidth: "400px",
-        width: "90%",
-        zIndex: 1000,
-      }}
-    >
-      <form onSubmit={handleSubmit}>
+    <Dialog open onClose={() => onAddVendor(null)} maxWidth="sm" fullWidth>
+      <DialogTitle>Registrar Vendedor</DialogTitle>
+      <DialogContent>
         <TextField
-          fullWidth
           label="Usuario"
           name="username"
-          value={vendorData.username}
+          value={formData.username}
           onChange={handleChange}
+          fullWidth
           margin="normal"
-          variant="outlined"
         />
         <TextField
-          fullWidth
           label="Contraseña"
           name="password"
           type="password"
-          value={vendorData.password}
+          value={formData.password}
           onChange={handleChange}
+          fullWidth
           margin="normal"
-          variant="outlined"
         />
         <TextField
-          fullWidth
-          label="Nombre del vendedor"
+          label="Nombre"
           name="name"
-          value={vendorData.name}
+          value={formData.name}
           onChange={handleChange}
+          fullWidth
           margin="normal"
-          variant="outlined"
         />
         <TextField
-          fullWidth
           label="Dirección"
           name="address"
-          value={vendorData.address}
+          value={formData.address}
           onChange={handleChange}
-          margin="normal"
-          variant="outlined"
-        />
-        <FormControl fullWidth margin="normal">
-          <InputLabel>Tipo de bombona</InputLabel>
-          <Select
-            name="cylinderType"
-            value={vendorData.cylinderType}
-            onChange={handleChange}
-            label="Tipo de bombona"
-          >
-            <MenuItem value="Española">Española</MenuItem>
-            <MenuItem value="Francesa">Francesa</MenuItem>
-          </Select>
-        </FormControl>
-        <TextField
           fullWidth
-          label="Cantidad disponible"
-          name="quantity"
-          type="number"
-          value={vendorData.quantity}
-          onChange={handleChange}
           margin="normal"
-          variant="outlined"
+        />
+        <TextField
+          label="Cantidad Española"
+          name="espanol"
+          type="number"
+          value={formData.cylinders.espanol}
+          onChange={handleChange}
+          fullWidth
+          margin="normal"
           inputProps={{ min: 0 }}
         />
-        <Button
+        <TextField
+          label="Cantidad Francesa"
+          name="francesa"
+          type="number"
+          value={formData.cylinders.francesa}
+          onChange={handleChange}
           fullWidth
-          type="submit"
-          variant="contained"
-          color="primary"
-          sx={{ marginTop: "16px" }}
-        >
-          Registrar Vendedor
+          margin="normal"
+          inputProps={{ min: 0 }}
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => onAddVendor(null)} color="primary">
+          Cancelar
         </Button>
-      </form>
-    </Paper>
+        <Button onClick={handleSubmit} color="primary" variant="contained">
+          Registrar
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 };
 
