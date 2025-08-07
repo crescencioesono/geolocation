@@ -54,8 +54,20 @@ const App = () => {
   const [cylinderTypeFilter, setCylinderTypeFilter] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
 
-  // Datos de prueba para Malabo
+  // Datos de prueba para Malabo, incluyendo admin
   const testVendors = [
+    {
+      id: 0,
+      username: "admin",
+      password: "admin123",
+      userId: "admin",
+      name: "Administrador",
+      address: "Oficina Central, Malabo",
+      cylinders: { espanol: 0, francesa: 0 },
+      position: { lat: 3.7523, lng: 8.7742 },
+      role: "admin",
+      isActive: false,
+    },
     {
       id: 1,
       username: "vendedor1",
@@ -65,6 +77,8 @@ const App = () => {
       address: "Avenida de la Independencia, Malabo",
       cylinders: { espanol: 5, francesa: 8 },
       position: { lat: 3.755, lng: 8.775 },
+      role: "vendor",
+      isActive: true,
     },
     {
       id: 2,
@@ -75,6 +89,8 @@ const App = () => {
       address: "Calle Ela Nguema, Malabo",
       cylinders: { espanol: 0, francesa: 5 },
       position: { lat: 3.749, lng: 8.780 },
+      role: "vendor",
+      isActive: true,
     },
     {
       id: 3,
@@ -85,6 +101,8 @@ const App = () => {
       address: "Barrio Los Ángeles, Malabo",
       cylinders: { espanol: 8, francesa: 0 },
       position: { lat: 3.760, lng: 8.770 },
+      role: "vendor",
+      isActive: true,
     },
   ];
 
@@ -132,8 +150,10 @@ const App = () => {
 
   // Añadir un nuevo vendedor
   const addVendor = (vendorData) => {
-    const newVendors = [...vendors, { ...vendorData, userId: vendorData.username }];
-    setVendors(newVendors);
+    if (vendorData) {
+      const newVendors = [...vendors, { ...vendorData, userId: vendorData.username, role: "vendor", isActive: false }];
+      setVendors(newVendors);
+    }
     setIsFormOpen(false);
     setIsDashboardOpen(false);
     setIsLoginOpen(false);
@@ -147,6 +167,14 @@ const App = () => {
     setVendors(updatedVendors);
   };
 
+  // Activar/desactivar punto de venta
+  const toggleVendorActive = (vendorId) => {
+    const updatedVendors = vendors.map((vendor) =>
+      vendor.id === vendorId ? { ...vendor, isActive: !vendor.isActive } : vendor
+    );
+    setVendors(updatedVendors);
+  };
+
   // Iniciar sesión
   const handleLogin = (username, password) => {
     const savedVendors = JSON.parse(localStorage.getItem("vendors") || "[]");
@@ -154,8 +182,8 @@ const App = () => {
       (v) => v.username === username && v.password === password
     );
     if (vendor) {
-      setCurrentUser({ username });
-      localStorage.setItem("currentUser", JSON.stringify({ username }));
+      setCurrentUser({ username, role: vendor.role });
+      localStorage.setItem("currentUser", JSON.stringify({ username, role: vendor.role }));
       setIsLoginOpen(false);
       setIsFormOpen(false);
       setIsDashboardOpen(true);
@@ -173,11 +201,19 @@ const App = () => {
     setIsLoginOpen(false);
   };
 
-  // Funciones para abrir modales (cierran otros modales)
+  // Funciones para abrir/cerrar modales
   const openForm = () => {
+    if (!currentUser || currentUser.role !== "admin") {
+      alert("Solo el administrador puede registrar vendedores.");
+      return;
+    }
     setIsFormOpen(true);
     setIsDashboardOpen(false);
     setIsLoginOpen(false);
+  };
+
+  const closeForm = () => {
+    setIsFormOpen(false);
   };
 
   const openDashboard = () => {
@@ -210,25 +246,25 @@ const App = () => {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   };
-  
-  // Filtrar vendedores según distancia y tipo de bombona
+
+  // Filtrar vendedores según distancia, tipo de bombona, y estado activo
   const filteredVendors = userLocation && (distanceFilter || cylinderTypeFilter)
     ? vendors.filter((vendor) => {
-        let passesDistanceFilter = true;
-        let passesCylinderTypeFilter = true;
-        if (distanceFilter) {
-          const distance = calculateDistance(userLocation, vendor.position);
-          passesDistanceFilter = distance <= distanceFilter;
-        }
-        if (cylinderTypeFilter) {
-          passesCylinderTypeFilter =
-            cylinderTypeFilter === "Española"
-              ? vendor.cylinders.espanol > 0
-              : vendor.cylinders.francesa > 0;
-        }
-        return passesDistanceFilter && passesCylinderTypeFilter;
-      })
-    : vendors;
+      let passesDistanceFilter = true;
+      let passesCylinderTypeFilter = true;
+      if (distanceFilter) {
+        const distance = calculateDistance(userLocation, vendor.position);
+        passesDistanceFilter = distance <= distanceFilter;
+      }
+      if (cylinderTypeFilter) {
+        passesCylinderTypeFilter =
+          cylinderTypeFilter === "Española"
+            ? vendor.cylinders.espanol > 0
+            : vendor.cylinders.francesa > 0;
+      }
+      return passesDistanceFilter && passesCylinderTypeFilter && vendor.isActive && vendor.role === "vendor";
+    })
+    : vendors.filter((vendor) => vendor.isActive && vendor.role === "vendor");
 
   return (
     <ThemeProvider theme={theme}>
@@ -247,11 +283,13 @@ const App = () => {
           onDistanceFilter={setDistanceFilter}
           onCylinderTypeFilter={setCylinderTypeFilter}
         />
-        {isFormOpen && <VendorForm onAddVendor={addVendor} />}
+        {isFormOpen && <VendorForm onAddVendor={addVendor} onClose={closeForm} />}
         {isDashboardOpen && currentUser && (
           <Dashboard
-            vendors={vendors.filter((v) => v.userId === currentUser.username)}
+            vendors={vendors}
+            currentUser={currentUser}
             onUpdateVendor={updateVendor}
+            onToggleActive={toggleVendorActive}
             onClose={() => setIsDashboardOpen(false)}
           />
         )}

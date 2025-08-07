@@ -1,4 +1,4 @@
-import { Drawer, Button, Typography, FormControl, InputLabel, Select, MenuItem } from "@mui/material";
+import { Drawer, Button, Typography, FormControl, InputLabel, Select, MenuItem, Box } from "@mui/material";
 
 const Sidebar = ({
   onToggleForm,
@@ -42,18 +42,21 @@ const Sidebar = ({
       </Typography>
       {isAuthenticated && (
         <Typography variant="body1" sx={{ marginBottom: "16px" }}>
-          Bienvenido, {currentUser.username}
+          Bienvenido, {currentUser.username} ({currentUser.role === "admin" ? "Administrador" : "Vendedor"})
         </Typography>
       )}
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={onToggleForm}
-        fullWidth
-        sx={{ marginBottom: "16px" }}
-      >
-        {isFormOpen ? "Cerrar Registro" : "Registrar Vendedor"}
-      </Button>
+
+      {isAuthenticated && currentUser.role === "admin" && (
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={onToggleForm}
+          fullWidth
+          sx={{ marginBottom: "16px" }}
+        >
+          {isFormOpen ? "Cerrar Registro" : "Registrar Vendedor"}
+        </Button>
+      )}
       <Button
         variant="contained"
         color="primary"
@@ -109,6 +112,50 @@ const Sidebar = ({
           <MenuItem value="Francesa">Francesa</MenuItem>
         </Select>
       </FormControl>
+      <Box sx={{ mt: 5 }}>
+        <Typography variant="subtitle1" color="primary" gutterBottom>
+          Leyenda de Colores
+        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+          <Box
+            sx={{
+              width: 12,
+              height: 12,
+              borderRadius: "50%",
+              backgroundColor: "#800080",
+              mr: 1,
+              border: "1px solid #ffffff",
+            }}
+          />
+          <Typography variant="body2">Ambos tipos</Typography>
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+          <Box
+            sx={{
+              width: 12,
+              height: 12,
+              borderRadius: "50%",
+              backgroundColor: "#ff0000",
+              mr: 1,
+              border: "1px solid #ffffff",
+            }}
+          />
+          <Typography variant="body2">Solo Española</Typography>
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Box
+            sx={{
+              width: 12,
+              height: 12,
+              borderRadius: "50%",
+              backgroundColor: "#0288d1",
+              mr: 1,
+              border: "1px solid #ffffff",
+            }}
+          />
+          <Typography variant="body2">Solo Francesa</Typography>
+        </Box>
+      </Box>
     </Drawer>
   );
 };

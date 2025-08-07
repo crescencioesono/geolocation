@@ -8,7 +8,7 @@ import {
   Button,
 } from "@mui/material";
 
-const VendorForm = ({ onAddVendor }) => {
+const VendorForm = ({ onAddVendor, onClose }) => {
   const [formData, setFormData] = useState({
     id: Date.now(),
     username: "",
@@ -75,7 +75,7 @@ const VendorForm = ({ onAddVendor }) => {
   }, []);
 
   return (
-    <Dialog open onClose={() => onAddVendor(null)} maxWidth="sm" fullWidth>
+    <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Registrar Vendedor</DialogTitle>
       <DialogContent>
         <TextField
@@ -133,7 +133,7 @@ const VendorForm = ({ onAddVendor }) => {
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onAddVendor(null)} color="primary">
+        <Button onClick={onClose} color="primary">
           Cancelar
         </Button>
         <Button onClick={handleSubmit} color="primary" variant="contained">

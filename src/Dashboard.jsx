@@ -15,7 +15,7 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 
-const Dashboard = ({ vendors, onUpdateVendor, onClose }) => {
+const Dashboard = ({ vendors, currentUser, onUpdateVendor, onToggleActive, onClose }) => {
   const [editingVendor, setEditingVendor] = useState(null);
 
   const handleEdit = (vendor) => {
@@ -23,6 +23,14 @@ const Dashboard = ({ vendors, onUpdateVendor, onClose }) => {
   };
 
   const handleSave = () => {
+    if (
+      !editingVendor.name ||
+      !editingVendor.address ||
+      (editingVendor.cylinders.espanol === 0 && editingVendor.cylinders.francesa === 0)
+    ) {
+      alert("Por favor, completa todos los campos. Debe haber al menos una bombona.");
+      return;
+    }
     onUpdateVendor(editingVendor);
     setEditingVendor(null);
   };
@@ -39,10 +47,15 @@ const Dashboard = ({ vendors, onUpdateVendor, onClose }) => {
     }
   };
 
+  const filteredVendors =
+    currentUser.role === "admin"
+      ? vendors.filter((vendor) => vendor.role === "vendor")
+      : vendors.filter((vendor) => vendor.userId === currentUser.username);
+
   return (
     <Dialog open onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
-        Dashboard de Vendedores
+        {currentUser.role === "admin" ? "Dashboard de Administrador" : "Dashboard de Vendedor"}
         <IconButton
           onClick={onClose}
           sx={{ position: "absolute", right: 8, top: 8 }}
@@ -58,26 +71,38 @@ const Dashboard = ({ vendors, onUpdateVendor, onClose }) => {
               <TableCell>Dirección</TableCell>
               <TableCell>Cant. Española</TableCell>
               <TableCell>Cant. Francesa</TableCell>
+              <TableCell>Estado</TableCell>
               <TableCell>Acciones</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {vendors.map((vendor) => (
+            {filteredVendors.map((vendor) => (
               <TableRow key={vendor.id}>
                 <TableCell>{vendor.name}</TableCell>
                 <TableCell>{vendor.address}</TableCell>
                 <TableCell>{vendor.cylinders.espanol}</TableCell>
                 <TableCell>{vendor.cylinders.francesa}</TableCell>
+                <TableCell>{vendor.isActive ? "Activo" : "Inactivo"}</TableCell>
                 <TableCell>
-                  <Button onClick={() => handleEdit(vendor)}>Editar</Button>
+                  {currentUser.role === "vendor" && (
+                    <>
+                      <Button
+                        onClick={() => onToggleActive(vendor.id)}
+                        color={vendor.isActive ? "secondary" : "primary"}
+                      >
+                        {vendor.isActive ? "Desactivar" : "Activar"}
+                      </Button>
+                      <Button onClick={() => handleEdit(vendor)}>Editar</Button>
+                    </>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
-        {editingVendor && (
+        {editingVendor && currentUser.role === "vendor" && (
           <Dialog open onClose={() => setEditingVendor(null)} maxWidth="sm" fullWidth>
-            <DialogTitle>Editar Vendedor</DialogTitle>
+            <DialogTitle>Editar Punto de Venta</DialogTitle>
             <DialogContent>
               <TextField
                 label="Nombre"
