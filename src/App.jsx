@@ -54,7 +54,7 @@ const App = () => {
   const [cylinderTypeFilter, setCylinderTypeFilter] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
 
-  // Datos de prueba para Malabo, incluyendo admin
+  // Datos de prueba para Malabo, incluyendo admin y teléfonos
   const testVendors = [
     {
       id: 0,
@@ -63,6 +63,7 @@ const App = () => {
       userId: "admin",
       name: "Administrador",
       address: "Oficina Central, Malabo",
+      phone: "555-000-000",
       cylinders: { espanol: 0, francesa: 0 },
       position: { lat: 3.7523, lng: 8.7742 },
       role: "admin",
@@ -75,6 +76,7 @@ const App = () => {
       userId: "vendedor1",
       name: "Gas Malabo Centro",
       address: "Avenida de la Independencia, Malabo",
+      phone: "555-123-456",
       cylinders: { espanol: 5, francesa: 8 },
       position: { lat: 3.755, lng: 8.775 },
       role: "vendor",
@@ -87,6 +89,7 @@ const App = () => {
       userId: "vendedor2",
       name: "Gas Ela Nguema",
       address: "Calle Ela Nguema, Malabo",
+      phone: "555-789-012",
       cylinders: { espanol: 0, francesa: 5 },
       position: { lat: 3.749, lng: 8.780 },
       role: "vendor",
@@ -99,6 +102,7 @@ const App = () => {
       userId: "vendedor3",
       name: "Gas Los Ángeles",
       address: "Barrio Los Ángeles, Malabo",
+      phone: "555-345-678",
       cylinders: { espanol: 8, francesa: 0 },
       position: { lat: 3.760, lng: 8.770 },
       role: "vendor",
@@ -234,6 +238,36 @@ const App = () => {
     setIsDashboardOpen(false);
   };
 
+  // Filtrar vendedores según distancia, tipo de bombona, estado activo, y stock
+  const filteredVendors = userLocation && (distanceFilter || cylinderTypeFilter)
+    ? vendors.filter((vendor) => {
+        let passesDistanceFilter = true;
+        let passesCylinderTypeFilter = true;
+        if (distanceFilter) {
+          const distance = calculateDistance(userLocation, vendor.position);
+          passesDistanceFilter = distance <= distanceFilter;
+        }
+        if (cylinderTypeFilter) {
+          passesCylinderTypeFilter =
+            cylinderTypeFilter === "Española"
+              ? vendor.cylinders.espanol > 0
+              : vendor.cylinders.francesa > 0;
+        }
+        return (
+          passesDistanceFilter &&
+          passesCylinderTypeFilter &&
+          vendor.isActive &&
+          vendor.role === "vendor" &&
+          (vendor.cylinders.espanol > 0 || vendor.cylinders.francesa > 0)
+        );
+      })
+    : vendors.filter(
+        (vendor) =>
+          vendor.isActive &&
+          vendor.role === "vendor" &&
+          (vendor.cylinders.espanol > 0 || vendor.cylinders.francesa > 0)
+      );
+
   // Fórmula de Haversine para calcular distancia en km
   const calculateDistance = (pos1, pos2) => {
     const toRad = (value) => (value * Math.PI) / 180;
@@ -246,25 +280,6 @@ const App = () => {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   };
-
-  // Filtrar vendedores según distancia, tipo de bombona, y estado activo
-  const filteredVendors = userLocation && (distanceFilter || cylinderTypeFilter)
-    ? vendors.filter((vendor) => {
-      let passesDistanceFilter = true;
-      let passesCylinderTypeFilter = true;
-      if (distanceFilter) {
-        const distance = calculateDistance(userLocation, vendor.position);
-        passesDistanceFilter = distance <= distanceFilter;
-      }
-      if (cylinderTypeFilter) {
-        passesCylinderTypeFilter =
-          cylinderTypeFilter === "Española"
-            ? vendor.cylinders.espanol > 0
-            : vendor.cylinders.francesa > 0;
-      }
-      return passesDistanceFilter && passesCylinderTypeFilter && vendor.isActive && vendor.role === "vendor";
-    })
-    : vendors.filter((vendor) => vendor.isActive && vendor.role === "vendor");
 
   return (
     <ThemeProvider theme={theme}>

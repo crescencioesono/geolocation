@@ -125,6 +125,9 @@ const Map = ({ vendors, center }) => {
                   Dirección: {selectedVendor.address}
                 </Typography>
                 <Typography variant="body2">
+                  Teléfono: {selectedVendor.phone}
+                </Typography>
+                <Typography variant="body2">
                   Cantidad Española: {selectedVendor.cylinders.espanol}
                 </Typography>
                 <Typography variant="body2">

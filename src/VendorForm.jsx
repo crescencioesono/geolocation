@@ -15,6 +15,7 @@ const VendorForm = ({ onAddVendor, onClose }) => {
     password: "",
     name: "",
     address: "",
+    phone: "",
     cylinders: { espanol: 0, francesa: 0 },
     position: { lat: 3.7523, lng: 8.7742 },
   });
@@ -37,9 +38,9 @@ const VendorForm = ({ onAddVendor, onClose }) => {
       !formData.password ||
       !formData.name ||
       !formData.address ||
-      (formData.cylinders.espanol === 0 && formData.cylinders.francesa === 0)
+      !formData.phone
     ) {
-      alert("Por favor, completa todos los campos. Debe haber al menos una bombona.");
+      alert("Por favor, completa todos los campos (Usuario, Contraseña, Nombre, Dirección, Teléfono).");
       return;
     }
     onAddVendor(formData);
@@ -49,6 +50,7 @@ const VendorForm = ({ onAddVendor, onClose }) => {
       password: "",
       name: "",
       address: "",
+      phone: "",
       cylinders: { espanol: 0, francesa: 0 },
       position: { lat: 3.7523, lng: 8.7742 },
     });
@@ -107,6 +109,14 @@ const VendorForm = ({ onAddVendor, onClose }) => {
           label="Dirección"
           name="address"
           value={formData.address}
+          onChange={handleChange}
+          fullWidth
+          margin="normal"
+        />
+        <TextField
+          label="Teléfono"
+          name="phone"
+          value={formData.phone}
           onChange={handleChange}
           fullWidth
           margin="normal"

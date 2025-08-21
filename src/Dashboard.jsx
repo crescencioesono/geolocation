@@ -26,9 +26,9 @@ const Dashboard = ({ vendors, currentUser, onUpdateVendor, onToggleActive, onClo
     if (
       !editingVendor.name ||
       !editingVendor.address ||
-      (editingVendor.cylinders.espanol === 0 && editingVendor.cylinders.francesa === 0)
+      !editingVendor.phone
     ) {
-      alert("Por favor, completa todos los campos. Debe haber al menos una bombona.");
+      alert("Por favor, completa todos los campos (Nombre, Dirección, Teléfono).");
       return;
     }
     onUpdateVendor(editingVendor);
@@ -69,6 +69,7 @@ const Dashboard = ({ vendors, currentUser, onUpdateVendor, onToggleActive, onClo
             <TableRow>
               <TableCell>Nombre</TableCell>
               <TableCell>Dirección</TableCell>
+              <TableCell>Teléfono</TableCell>
               <TableCell>Cant. Española</TableCell>
               <TableCell>Cant. Francesa</TableCell>
               <TableCell>Estado</TableCell>
@@ -80,6 +81,7 @@ const Dashboard = ({ vendors, currentUser, onUpdateVendor, onToggleActive, onClo
               <TableRow key={vendor.id}>
                 <TableCell>{vendor.name}</TableCell>
                 <TableCell>{vendor.address}</TableCell>
+                <TableCell>{vendor.phone}</TableCell>
                 <TableCell>{vendor.cylinders.espanol}</TableCell>
                 <TableCell>{vendor.cylinders.francesa}</TableCell>
                 <TableCell>{vendor.isActive ? "Activo" : "Inactivo"}</TableCell>
@@ -116,6 +118,14 @@ const Dashboard = ({ vendors, currentUser, onUpdateVendor, onToggleActive, onClo
                 label="Dirección"
                 name="address"
                 value={editingVendor.address}
+                onChange={handleChange}
+                fullWidth
+                margin="normal"
+              />
+              <TextField
+                label="Teléfono"
+                name="phone"
+                value={editingVendor.phone}
                 onChange={handleChange}
                 fullWidth
                 margin="normal"
