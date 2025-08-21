@@ -46,6 +46,8 @@ const theme = createTheme({
 
 const App = () => {
   const [vendors, setVendors] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
@@ -110,7 +112,7 @@ const App = () => {
     },
   ];
 
-  // Cargar vendedores y usuario desde localStorage al iniciar
+  // Cargar datos desde localStorage al iniciar
   useEffect(() => {
     const savedVendors = JSON.parse(localStorage.getItem("vendors") || "[]");
     if (savedVendors.length === 0) {
@@ -121,16 +123,30 @@ const App = () => {
       console.log("Vendedores cargados desde localStorage:", savedVendors);
       setVendors(savedVendors);
     }
+    const savedMessages = JSON.parse(localStorage.getItem("messages") || "[]");
+    setMessages(savedMessages);
+    const savedNotifications = JSON.parse(localStorage.getItem("notifications") || "[]");
+    setNotifications(savedNotifications);
     const savedUser = JSON.parse(localStorage.getItem("currentUser"));
     console.log("Usuario cargado desde localStorage:", savedUser);
     setCurrentUser(savedUser);
   }, []);
 
-  // Guardar vendedores en localStorage cuando cambien
+  // Guardar datos en localStorage cuando cambien
   useEffect(() => {
     console.log("Guardando vendedores en localStorage:", vendors);
     localStorage.setItem("vendors", JSON.stringify(vendors));
   }, [vendors]);
+
+  useEffect(() => {
+    console.log("Guardando mensajes en localStorage:", messages);
+    localStorage.setItem("messages", JSON.stringify(messages));
+  }, [messages]);
+
+  useEffect(() => {
+    console.log("Guardando notificaciones en localStorage:", notifications);
+    localStorage.setItem("notifications", JSON.stringify(notifications));
+  }, [notifications]);
 
   // Obtener la ubicación del usuario al cargar
   useEffect(() => {
@@ -152,23 +168,77 @@ const App = () => {
     }
   }, []);
 
-  // Añadir un nuevo vendedor
+  // Añadir un nuevo vendedor y verificar stock
   const addVendor = (vendorData) => {
     if (vendorData) {
       const newVendors = [...vendors, { ...vendorData, userId: vendorData.username, role: "vendor", isActive: false }];
       setVendors(newVendors);
+      // Generar notificaciones de stock en 0
+      if (vendorData.cylinders.espanol === 0 || vendorData.cylinders.francesa === 0) {
+        const newNotifications = [];
+        if (vendorData.cylinders.espanol === 0) {
+          newNotifications.push({
+            id: Date.now(),
+            vendorId: vendorData.id,
+            message: `El vendedor ${vendorData.name} tiene 0 bombonas Españolas.`,
+            timestamp: new Date().toISOString(),
+            read: false,
+          });
+        }
+        if (vendorData.cylinders.francesa === 0) {
+          newNotifications.push({
+            id: Date.now() + 1,
+            vendorId: vendorData.id,
+            message: `El vendedor ${vendorData.name} tiene 0 bombonas Francesas.`,
+            timestamp: new Date().toISOString(),
+            read: false,
+          });
+        }
+        setNotifications([...notifications, ...newNotifications]);
+      }
     }
     setIsFormOpen(false);
     setIsDashboardOpen(false);
     setIsLoginOpen(false);
   };
 
-  // Actualizar un vendedor
+  // Actualizar un vendedor y verificar stock
   const updateVendor = (updatedVendor) => {
     const updatedVendors = vendors.map((vendor) =>
       vendor.id === updatedVendor.id ? updatedVendor : vendor
     );
     setVendors(updatedVendors);
+    // Generar notificaciones de stock en 0
+    if (updatedVendor.cylinders.espanol === 0 || updatedVendor.cylinders.francesa === 0) {
+      const newNotifications = [];
+      if (updatedVendor.cylinders.espanol === 0) {
+        newNotifications.push({
+          id: Date.now(),
+          vendorId: updatedVendor.id,
+          message: `El vendedor ${updatedVendor.name} tiene 0 bombonas Españolas.`,
+          timestamp: new Date().toISOString(),
+          read: false,
+        });
+      }
+      if (updatedVendor.cylinders.francesa === 0) {
+        newNotifications.push({
+          id: Date.now() + 1,
+          vendorId: updatedVendor.id,
+          message: `El vendedor ${updatedVendor.name} tiene 0 bombonas Francesas.`,
+          timestamp: new Date().toISOString(),
+          read: false,
+        });
+      }
+      setNotifications([...notifications, ...newNotifications]);
+    }
+  };
+
+  // Marcar notificación como leída
+  const markNotificationAsRead = (notificationId) => {
+    const updatedNotifications = notifications.map((notif) =>
+      notif.id === notificationId ? { ...notif, read: true } : notif
+    );
+    setNotifications(updatedNotifications);
   };
 
   // Activar/desactivar punto de venta
@@ -177,6 +247,27 @@ const App = () => {
       vendor.id === vendorId ? { ...vendor, isActive: !vendor.isActive } : vendor
     );
     setVendors(updatedVendors);
+  };
+
+  // Enviar un mensaje
+  const sendMessage = (messageData) => {
+    const newMessage = {
+      id: Date.now(),
+      sender: currentUser.username,
+      recipient: messageData.recipient,
+      content: messageData.content,
+      timestamp: new Date().toISOString(),
+      read: false,
+    };
+    setMessages([...messages, newMessage]);
+  };
+
+  // Marcar mensaje como leído
+  const markMessageAsRead = (messageId) => {
+    const updatedMessages = messages.map((msg) =>
+      msg.id === messageId ? { ...msg, read: true } : msg
+    );
+    setMessages(updatedMessages);
   };
 
   // Iniciar sesión
@@ -238,6 +329,19 @@ const App = () => {
     setIsDashboardOpen(false);
   };
 
+  // Fórmula de Haversine para calcular distancia en km
+  const calculateDistance = (pos1, pos2) => {
+    const toRad = (value) => (value * Math.PI) / 180;
+    const R = 6371; // Radio de la Tierra en km
+    const dLat = toRad(pos2.lat - pos1.lat);
+    const dLng = toRad(pos2.lng - pos1.lng);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(pos1.lat)) * Math.cos(toRad(pos2.lat)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+  
   // Filtrar vendedores según distancia, tipo de bombona, estado activo, y stock
   const filteredVendors = userLocation && (distanceFilter || cylinderTypeFilter)
     ? vendors.filter((vendor) => {
@@ -268,19 +372,6 @@ const App = () => {
           (vendor.cylinders.espanol > 0 || vendor.cylinders.francesa > 0)
       );
 
-  // Fórmula de Haversine para calcular distancia en km
-  const calculateDistance = (pos1, pos2) => {
-    const toRad = (value) => (value * Math.PI) / 180;
-    const R = 6371; // Radio de la Tierra en km
-    const dLat = toRad(pos2.lat - pos1.lat);
-    const dLng = toRad(pos2.lng - pos1.lng);
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(toRad(pos1.lat)) * Math.cos(toRad(pos2.lat)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-  };
-
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -302,9 +393,14 @@ const App = () => {
         {isDashboardOpen && currentUser && (
           <Dashboard
             vendors={vendors}
+            messages={messages}
+            notifications={notifications}
             currentUser={currentUser}
             onUpdateVendor={updateVendor}
             onToggleActive={toggleVendorActive}
+            onSendMessage={sendMessage}
+            onMarkMessageAsRead={markMessageAsRead}
+            onMarkNotificationAsRead={markNotificationAsRead}
             onClose={() => setIsDashboardOpen(false)}
           />
         )}
