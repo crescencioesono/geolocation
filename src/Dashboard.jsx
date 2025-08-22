@@ -27,7 +27,7 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 
-const Dashboard = ({ vendors, messages, notifications, currentUser, onUpdateVendor, onToggleActive, onSendMessage, onMarkMessageAsRead, onMarkNotificationAsRead, onClose }) => {
+const Dashboard = ({ vendors, messages, notifications, currentUser, onUpdateVendor, onToggleActive, onSendMessage, onMarkMessageAsRead, onMarkNotificationAsRead, onRenewContract, onClose }) => {
   const [editingVendor, setEditingVendor] = useState(null);
   const [messageRecipient, setMessageRecipient] = useState("");
   const [messageContent, setMessageContent] = useState("");
@@ -85,11 +85,34 @@ const Dashboard = ({ vendors, messages, notifications, currentUser, onUpdateVend
             msg.sender === "admin"
         );
 
-  const filteredNotifications = notifications.filter(
-    (notif) => currentUser.role === "admin" && !notif.read
+  const filteredStockNotifications = notifications.filter(
+    (notif) => currentUser.role === "admin" && notif.type === "stock" && !notif.read
   );
 
+  const filteredContractNotifications =
+    currentUser.role === "admin"
+      ? notifications.filter((notif) => notif.type === "contract" && notif.recipient === "admin" && !notif.read)
+      : notifications.filter(
+          (notif) => notif.type === "contract" && notif.recipient === currentUser.username
+        );
+
   const unreadMessagesCount = filteredMessages.filter((msg) => !msg.read).length;
+
+  const getVendorStatus = (vendor) => {
+    if (vendor.contractEndDate && new Date(vendor.contractEndDate) < new Date()) {
+      return "Expirado";
+    }
+    return vendor.isActive ? "Activo" : "Inactivo";
+  };
+
+  const shouldShowRenewButton = (vendor) => {
+    if (!vendor.contractEndDate) return false;
+    const today = new Date();
+    const endDate = new Date(vendor.contractEndDate);
+    const timeDiff = endDate - today;
+    const daysDiff = timeDiff / (1000 * 60 * 60 * 24);
+    return daysDiff <= 30; // Mostrar si está a 30 días o menos de caducar o ya caducó
+  };
 
   return (
     <Dialog open onClose={onClose} maxWidth="md" fullWidth>
@@ -143,11 +166,11 @@ const Dashboard = ({ vendors, messages, notifications, currentUser, onUpdateVend
               </Button>
             </Box>
             <Typography variant="h6" color="primary" gutterBottom>
-              Notificaciones de Stock
+              Notificaciones de Contratos
             </Typography>
             <List>
-              {filteredNotifications.length > 0 ? (
-                filteredNotifications.map((notif) => (
+              {filteredContractNotifications.length > 0 ? (
+                filteredContractNotifications.map((notif) => (
                   <ListItem key={notif.id}>
                     <ListItemIcon>
                       <Checkbox
@@ -163,13 +186,54 @@ const Dashboard = ({ vendors, messages, notifications, currentUser, onUpdateVend
                   </ListItem>
                 ))
               ) : (
-                <Typography variant="body2">No hay notificaciones.</Typography>
+                <Typography variant="body2">No hay notificaciones de contratos.</Typography>
+              )}
+            </List>
+            <Typography variant="h6" color="primary" gutterBottom>
+              Notificaciones de Stock
+            </Typography>
+            <List>
+              {filteredStockNotifications.length > 0 ? (
+                filteredStockNotifications.map((notif) => (
+                  <ListItem key={notif.id}>
+                    <ListItemIcon>
+                      <Checkbox
+                        checked={notif.read}
+                        onChange={() => onMarkNotificationAsRead(notif.id)}
+                        color="primary"
+                      />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={notif.message}
+                      secondary={new Date(notif.timestamp).toLocaleString()}
+                    />
+                  </ListItem>
+                ))
+              ) : (
+                <Typography variant="body2">No hay notificaciones de stock.</Typography>
               )}
             </List>
           </>
         )}
         {currentUser.role === "vendor" && (
           <>
+            <Typography variant="h6" color="primary" gutterBottom>
+              Notificaciones de Contrato
+            </Typography>
+            <List>
+              {filteredContractNotifications.length > 0 ? (
+                filteredContractNotifications.map((notif) => (
+                  <ListItem key={notif.id}>
+                    <ListItemText
+                      primary={notif.message}
+                      secondary={new Date(notif.timestamp).toLocaleString()}
+                    />
+                  </ListItem>
+                ))
+              ) : (
+                <Typography variant="body2">No hay notificaciones de contratos.</Typography>
+              )}
+            </List>
             <Typography variant="h6" color="primary" gutterBottom>
               Mensajes Recibidos
               {unreadMessagesCount > 0 && (
@@ -215,6 +279,7 @@ const Dashboard = ({ vendors, messages, notifications, currentUser, onUpdateVend
               <TableCell>Cant. Española</TableCell>
               <TableCell>Cant. Francesa</TableCell>
               <TableCell>Estado</TableCell>
+              <TableCell>Fecha de Expiración</TableCell>
               <TableCell>Acciones</TableCell>
             </TableRow>
           </TableHead>
@@ -226,7 +291,12 @@ const Dashboard = ({ vendors, messages, notifications, currentUser, onUpdateVend
                 <TableCell>{vendor.phone}</TableCell>
                 <TableCell>{vendor.cylinders.espanol}</TableCell>
                 <TableCell>{vendor.cylinders.francesa}</TableCell>
-                <TableCell>{vendor.isActive ? "Activo" : "Inactivo"}</TableCell>
+                <TableCell>{getVendorStatus(vendor)}</TableCell>
+                <TableCell>
+                  {vendor.contractEndDate
+                    ? new Date(vendor.contractEndDate).toLocaleDateString()
+                    : "-"}
+                </TableCell>
                 <TableCell>
                   {currentUser.role === "vendor" && (
                     <>
@@ -238,6 +308,14 @@ const Dashboard = ({ vendors, messages, notifications, currentUser, onUpdateVend
                       </Button>
                       <Button onClick={() => handleEdit(vendor)}>Editar</Button>
                     </>
+                  )}
+                  {currentUser.role === "admin" && shouldShowRenewButton(vendor) && (
+                    <Button
+                      onClick={() => onRenewContract(vendor.id)}
+                      color="primary"
+                    >
+                      Renovar
+                    </Button>
                   )}
                 </TableCell>
               </TableRow>
