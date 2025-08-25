@@ -139,6 +139,7 @@ const App = () => {
     console.log("Usuario cargado desde localStorage:", savedUser);
     setCurrentUser(savedUser);
     checkContracts(savedVendors.length === 0 ? testVendors : savedVendors);
+    // eslint-disable-next-line
   }, []);
 
   // Guardar datos en localStorage cuando cambien
@@ -146,6 +147,7 @@ const App = () => {
     console.log("Guardando vendedores en localStorage:", vendors);
     localStorage.setItem("vendors", JSON.stringify(vendors));
     checkContracts(vendors);
+    // eslint-disable-next-line
   }, [vendors]);
 
   useEffect(() => {
