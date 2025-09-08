@@ -114,6 +114,11 @@ const Dashboard = ({ vendors, messages, notifications, currentUser, onUpdateVend
     return daysDiff <= 30; // Mostrar si está a 30 días o menos de caducar o ya caducó
   };
 
+  // Calcular totales de bombonas para el administrador
+  const totalEspanol = filteredVendors.reduce((sum, vendor) => sum + (vendor.cylinders.espanol || 0), 0);
+  const totalFrancesa = filteredVendors.reduce((sum, vendor) => sum + (vendor.cylinders.francesa || 0), 0);
+  const totalGeneral = totalEspanol + totalFrancesa;
+
   return (
     <Dialog open onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
@@ -213,6 +218,20 @@ const Dashboard = ({ vendors, messages, notifications, currentUser, onUpdateVend
                 <Typography variant="body2">No hay notificaciones de stock.</Typography>
               )}
             </List>
+            <Typography variant="h6" color="primary" gutterBottom>
+              Total de Bombonas Disponibles
+            </Typography>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body1">
+                Bombonas Españolas: {totalEspanol}
+              </Typography>
+              <Typography variant="body1">
+                Bombonas Francesas: {totalFrancesa}
+              </Typography>
+              <Typography variant="body1" sx={{ fontWeight: "bold" }}>
+                Total General: {totalGeneral}
+              </Typography>
+            </Box>
           </>
         )}
         {currentUser.role === "vendor" && (
